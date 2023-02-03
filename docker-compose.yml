@@ -1,0 +1,50 @@
+version: "3.3"
+
+services:
+  app:
+    build: .
+    image: csv_uploder
+    command: python app.py
+    networks:
+      - localstack
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
+  db:
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db:/var/lib/postgresql/data
+  localstack:
+    container_name: "${LOCALSTACK_DOCKER_NAME-localstack_main}"
+    image: localstack/localstack
+    ports:
+      - "127.0.0.1:4566:4566" # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559" # ext services port range
+      - "127.0.0.1:53:53" # DNS config
+      - "127.0.0.1:53:53/udp" # DNS config
+      - "127.0.0.1:443:443" # LocalStack HTTPS Gateway
+    environment:
+      - DEBUG=${DEBUG-}
+      - PERSISTENCE=${PERSISTENCE-}
+      - LAMBDA_EXECUTOR=${LAMBDA_EXECUTOR-}
+      - LOCALSTACK_API_KEY=${LOCALSTACK_API_KEY-} # only required
+    networks:
+      - localstack
+volumes:
+  db:
+    driver: local
+networks:
+  localstack:
+    driver: bridge
